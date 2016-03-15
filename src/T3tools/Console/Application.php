@@ -6,7 +6,11 @@ namespace BeechIt\T3tools\Console;
  * Date: 15-03-2016
  * All code (c) Beech Applications B.V. all rights reserved
  */
+use Symfony\Component\Console\Command\HelpCommand;
 use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class Application
@@ -22,6 +26,21 @@ class Application extends \Symfony\Component\Console\Application
      * @var array
      */
     protected $configuration = [];
+
+    /**
+     * Gets the default input definition.
+     *
+     * @return InputDefinition An InputDefinition instance
+     */
+    protected function getDefaultInputDefinition()
+    {
+        return new InputDefinition(array(
+            new InputArgument('command', InputArgument::REQUIRED, 'The command to execute'),
+
+            new InputOption('--help', '-h', InputOption::VALUE_NONE, 'Display this help message'),
+            new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display this application version'),
+        ));
+    }
 
     /**
      * @param string $file
@@ -86,7 +105,9 @@ class Application extends \Symfony\Component\Console\Application
                 'port' => !empty($GLOBALS['TYPO3_CONF_VARS']['DB']['port']) ? $GLOBALS['TYPO3_CONF_VARS']['DB']['port'] : 3306,
                 'socket' => !empty($GLOBALS['TYPO3_CONF_VARS']['DB']['socket']) ? $GLOBALS['TYPO3_CONF_VARS']['DB']['socket'] : '',
             ],
-            'web_root' => $webRootPath
+            'web_root' => $webRootPath,
+            'backups_path' => $webRootPath . 'backups/',
+            'php_path' => PHP_BINARY,
         ];
     }
 
@@ -94,11 +115,18 @@ class Application extends \Symfony\Component\Console\Application
      * Get configuration
      *
      * @param string $key
-     * @return array
+     * @return mixed
      */
     public function getConfiguration($key = null) {
         if ($key) {
-            return isset($this->configuration[$key]) ? $this->configuration[$key] : [];
+            $value = $this->configuration;
+            foreach (explode('.', $key) as $partKey) {
+                if (!array_key_exists($partKey, $value)) {
+                    return null;
+                }
+                $value = $value[$partKey];
+            }
+            return $value;
         } else {
             return $this->configuration;
         }

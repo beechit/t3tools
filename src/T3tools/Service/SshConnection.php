@@ -8,9 +8,9 @@ namespace BeechIt\T3tools\Service;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Class Service
+ * Ssh Connection
  */
-class SshService
+class SshConnection
 {
     /**
      * @var array
@@ -51,11 +51,25 @@ class SshService
     }
 
     /**
+     * Get config value
+     *
      * @param string $key
      * @return string|null
      */
     public function getConfig($key) {
-        return isset($this->serverConfiguration[$key]) ? $this->serverConfiguration[$key] : null;
+        $value = isset($this->serverConfiguration[$key]) ? $this->serverConfiguration[$key] : null;
+        switch ($key) {
+            case 'backups_path':
+                if ($value === null) {
+                    $value = rtrim($this->getConfig('web_root') ?: '', '/');
+                    if ($value) {
+                        $value .= '/';
+                    }
+                    $value .= 'backups/';
+                }
+                break;
+        }
+        return $value;
     }
 
     /**
@@ -83,9 +97,10 @@ class SshService
      * Exec typo3_console command on remote
      *
      * @param string $command
+     * @param bool $passthru passthru or exec
      * @return int
      */
-    public function typo3Console($command) {
+    public function typo3Console($command, $passthru = true, array &$output = []) {
 
         $realCommand = [];
         if ($this->getConfig('php_path')) {
@@ -98,7 +113,11 @@ class SshService
         }
         $realCommand[] = $command;
 
-        return $this->passthru(implode(' ', $realCommand));
+        if ($passthru) {
+            return $this->passthru(implode(' ', $realCommand));
+        } else {
+            return $this->exec(implode(' ', $realCommand), $output);
+        }
     }
 
     /**

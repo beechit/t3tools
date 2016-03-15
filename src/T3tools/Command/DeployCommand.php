@@ -43,9 +43,11 @@ class DeployCommand extends Command
     {
 
         // Server
+        // Server
         $servers = $this->getApplication()->getConfiguration('servers');
-        if (empty($servers)) {
-            $output->writeln('<error>No servers configured</error>');
+        $server = $this->selectServer($servers, $input, $output, 'first');
+        // Exit when no server found
+        if ($server === false) {
             return 1;
         }
 
@@ -54,43 +56,14 @@ class DeployCommand extends Command
             return 1;
         }
 
-        $helper = $this->getHelper('question');
-        $server = $input->getArgument('server');
-        if (empty($server)) {
-            $serverOptions = array_keys($servers);
-            $question = new Question('Please select server to deploy to <comment>(' . implode(', ', $serverOptions) . ')</comment> <info>[' . $serverOptions[0] . ']</info>: ', $serverOptions[0]);
-            $question->setAutocompleterValues($serverOptions);
-            $server = $helper->ask($input, $output, $question);
-            $output->writeln('You have just selected: <info>' . $server . '</info>');
-        }
-
-        if (!isset($servers[$server])) {
-            $output->writeln('<error>Unknown server ' . $server . '</error>');
-            return 1;
-        }
-
-        // SSH connection
-        $sshService = new SshService($servers[$server]);
-        while (!$sshService->testSsh()) {
-            $question = new Question('Ssh pass <comment>(' . $sshService->getConfig('ssh_user') . '@' . $sshService->getConfig('ssh_host') . ')</comment>: ');
-            $question->setHidden(true);
-            $question->setHiddenFallback(false);
-            $question->setValidator(function ($value) {
-                if (trim($value) == '') {
-                    throw new \Exception('The password can not be empty');
-                }
-
-                return $value;
-            });
-            $sshService->setConf('ssh_pass', $helper->ask($input, $output, $question));
-        }
+        $sshConnection = $this->getSshConnection($servers[$server], $input, $output);
 
         $output->writeln('<info>rsync</info>');
 
         $command[] = '--include-from "rsync.conf"';
-        $command[] = $this->getApplication()->getConfiguration('local_typo3')['web_root'] . ' ' . $sshService->getConfig('ssh_user') . '@' . $sshService->getConfig('ssh_host') . ':' . rtrim($sshService->getConfig('web_root'), '/') . '/';
+        $command[] = $this->getApplication()->getConfiguration('local_typo3')['web_root'] . ' ' . $sshConnection->getConfig('ssh_user') . '@' . $sshConnection->getConfig('ssh_host') . ':' . rtrim($sshConnection->getConfig('web_root'), '/') . '/';
 
-        $return = $sshService->rsync(implode(' ', $command));
+        $return = $sshConnection->rsync(implode(' ', $command));
 
         if ((int)$return !== 0) {
             $output->writeln('<error>Rsync failed!!</error>');
@@ -98,7 +71,7 @@ class DeployCommand extends Command
         }
 
         $output->writeln('<info>Clear cache remote</info>');
-        $return = $sshService->typo3Console('cache:flush');
+        $return = $sshConnection->typo3Console('cache:flush');
         if ($return !== 0) {
             $output->writeln('<error>Flushing cache failed</error>');
             return 1;
@@ -107,7 +80,7 @@ class DeployCommand extends Command
         // todo: clear autoloader info
 
         $output->writeln('<info>Preform database updates</info>');
-        $return = $sshService->typo3Console('typo3_console:database:updateschema "*.add,*.change"');
+        $return = $sshConnection->typo3Console('typo3_console:database:updateschema "*.add,*.change"');
         if ($return !== 0) {
             $output->writeln('<error>Database update failed</error>');
             return 1;

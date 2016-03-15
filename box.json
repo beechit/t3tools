@@ -1,7 +1,8 @@
 {
   "chmod": "0755",
   "directories": [
-    "src"
+    "src",
+    "resources/examples"
   ],
   "files": [
     "LICENSE"
@@ -15,7 +16,7 @@
   ],
   "git-version": "package_version",
   "main": "src/t3tools.php",
-  "output": "t3tools.phar",
+  "output": "Build/t3tools.phar",
   "stub": true,
   "compression": "GZ"
 }

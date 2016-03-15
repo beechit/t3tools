@@ -35,17 +35,38 @@ class ShowCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        if (!$this->getApplication()->getConfiguration('servers')) {
+            $output->writeln('<error>No server configuration found (servers.ini or servers.json)</error>');
+        } else {
+            // Servers
+            foreach ($this->getApplication()->getConfiguration('servers') as $key => $config) {
+                $output->writeln('<info>server.' . $key . '</info>');
+                $table = new Table($output);
+                foreach ($config as $label => $value) {
+                    $table->addRow([$label, $value]);
+                }
+                $table->render();
+            }
+        }
+        $output->writeln('');
 
-        // Servers
-        foreach ($this->getApplication()->getConfiguration('servers') as $key => $config) {
-            $output->writeln('<info>' . $key . '</info>');
+        if (!$this->getApplication()->getConfiguration('local_typo3')) {
+            $output->writeln('<error>No local typo3 installation found</error>');
+        } else {
+            $output->writeln('<info>local_typo3</info>');
             $table = new Table($output);
-            foreach ($config as $label => $value) {
-                $table->addRow([$label, $value]);
+            foreach ($this->getApplication()->getConfiguration('local_typo3') as $key => $config) {
+                if (is_array($config)) {
+                    foreach ($config as $label => $value) {
+                        $table->addRow([$key . '.' . $label, $value]);
+                    }
+                } else {
+                    $table->addRow([$key, $config]);
+                }
             }
             $table->render();
         }
 
+        $output->writeln('');
     }
-
 }

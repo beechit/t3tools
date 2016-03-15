@@ -20,6 +20,9 @@ $application->loadConfiguration('servers.ini', 'servers');
 $application->loadLocalTypo3Configuration(getenv('web_path') ?: './public_html/');
 
 $application->add(new Command\DeployCommand());
+$application->add(new Command\FetchCommand());
 $application->add(new Command\Configuration\ShowCommand());
+$application->add(new Command\Configuration\CreateConfigCommand());
 //$application->add(new Command\SelfUpdateCommand());
+
 $application->run();
