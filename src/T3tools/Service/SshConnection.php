@@ -34,8 +34,8 @@ class SshConnection
      * @return bool
      */
     public function testSsh() {
-        // todo check ssh over shared ssh-key
-        if (empty($this->serverConfiguration['ssh_pass'])) {
+       $return = $this->exec('-q -o BatchMode=yes -o ConnectTimeout=5 exit');
+        if ($return > 0) {
             return false;
         } else {
             return true;
