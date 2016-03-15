@@ -1,0 +1,13 @@
+{
+  "name": "beechit/t3tools",
+  "keywords": ["TYPO3", "deploy", "sync"],
+  "require": {
+    "symfony/console": "~2.8",
+    "symfony/yaml": "~2.8",
+    "php": ">=5.5.0",
+    "padraic/phar-updater": "^1.0.0"
+  },
+  "autoload": {
+    "psr-4": { "BeechIt\\": "src/" }
+  }
+}
