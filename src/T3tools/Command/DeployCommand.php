@@ -6,6 +6,7 @@ namespace BeechIt\T3tools\Command;
  * Date: 15-03-2016
  * All code (c) Beech Applications B.V. all rights reserved
  */
+use BeechIt\T3tools\Service\SshConnection;
 use BeechIt\T3tools\Service\SshService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -41,8 +42,6 @@ class DeployCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
-        // Server
         // Server
         $servers = $this->getApplication()->getConfiguration('servers');
         $server = $this->selectServer($servers, $input, $output, 'first');
@@ -58,15 +57,8 @@ class DeployCommand extends Command
 
         $sshConnection = $this->getSshConnection($servers[$server], $input, $output);
 
-        $output->writeln('<info>rsync</info>');
-
-        $command[] = '--include-from "rsync.conf"';
-        $command[] = $this->getApplication()->getConfiguration('local_typo3')['web_root'] . ' ' . $sshConnection->getConfig('ssh_user') . '@' . $sshConnection->getConfig('ssh_host') . ':' . rtrim($sshConnection->getConfig('web_root'), '/') . '/';
-
-        $return = $sshConnection->rsync(implode(' ', $command));
-
-        if ((int)$return !== 0) {
-            $output->writeln('<error>Rsync failed!!</error>');
+        // deploy current build
+        if (!$this->deploy($servers[$server], $sshConnection, $input, $output)) {
             return 1;
         }
 
@@ -85,5 +77,30 @@ class DeployCommand extends Command
             $output->writeln('<error>Database update failed</error>');
             return 1;
         }
+    }
+
+    /**
+     * Deploy current build
+     *
+     * @param array $serverConfig
+     * @param SshConnection $sshConnection
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return bool
+     */
+    protected function deploy(array $serverConfig, SshConnection $sshConnection, InputInterface $input, OutputInterface $output) {
+
+        $output->writeln('<info>Rsync</info>');
+
+        $command[] = '--include-from "rsync.conf"';
+        $command[] = $this->getApplication()->getConfiguration('local_typo3')['web_root'] . ' ' . $sshConnection->getConfig('ssh_user') . '@' . $sshConnection->getConfig('ssh_host') . ':' . rtrim($sshConnection->getConfig('web_root'), '/') . '/';
+
+        $return = $sshConnection->rsync(implode(' ', $command));
+
+        if ((int)$return !== 0) {
+            $output->writeln('<error>Rsync failed!!</error>');
+            return false;
+        }
+        return true;
     }
 }

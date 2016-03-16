@@ -83,10 +83,12 @@ class Application extends \Symfony\Component\Console\Application
 
     /**
      * @param string $webRootPath
+     * @param string $projectPath
      * @return void
      */
-    public function loadLocalTypo3Configuration($webRootPath) {
+    public function loadLocalTypo3Configuration($webRootPath, $projectPath) {
         $webRootPath = rtrim($webRootPath, '/') . '/';
+        $projectPath = rtrim($projectPath, '/') . '/';
         if (!file_exists($webRootPath . 'typo3conf/LocalConfiguration.php')) {
             return;
         }
@@ -106,7 +108,8 @@ class Application extends \Symfony\Component\Console\Application
                 'socket' => !empty($GLOBALS['TYPO3_CONF_VARS']['DB']['socket']) ? $GLOBALS['TYPO3_CONF_VARS']['DB']['socket'] : '',
             ],
             'web_root' => $webRootPath,
-            'backups_path' => $webRootPath . 'backups/',
+            'project_path' => $projectPath,
+            'backups_path' => $projectPath . 'backups/',
             'php_path' => PHP_BINARY,
         ];
     }

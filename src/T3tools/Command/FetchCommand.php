@@ -49,7 +49,9 @@ class FetchCommand extends Command
 
         // SSH connection
         $sshConnection = $this->getSshConnection($servers[$server], $input, $output);
+
         $backupName = $server . '-' . date('YmdHis');
+        $output->writeln('<info>Creating remote backup ' . $backupName . '</info>');
         $return = $sshConnection->typo3Console('backup:create ' . $backupName);
         if ($return !== 0) {
             $output->writeln('<error>Remote backup failed</error>');

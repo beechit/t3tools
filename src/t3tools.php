@@ -17,7 +17,19 @@ $application = new Application('T3tools', '@package_version@');
 // Load configuration
 $application->loadConfiguration('servers.ini', 'servers');
 
-$application->loadLocalTypo3Configuration(getenv('web_path') ?: './public_html/');
+// Determine local web_path + project_path
+if (!getenv('web_path')) {
+    if (file_exists('./Web/')) {
+        $application->loadLocalTypo3Configuration('./Web/', './');
+    } elseif (file_exists('./web/')) {
+        $application->loadLocalTypo3Configuration('./web/', './');
+    } else {
+        $application->loadLocalTypo3Configuration('./public_html/', './');
+    }
+} else {
+    $application->loadLocalTypo3Configuration(getenv('web_path'), rtrim(getenv('web_path'), '/') . '/../');
+}
+
 
 $application->add(new Command\DeployCommand());
 $application->add(new Command\FetchCommand());

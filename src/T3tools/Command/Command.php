@@ -60,7 +60,6 @@ class Command extends \Symfony\Component\Console\Command\Command
             );
             $question->setAutocompleterValues($serverOptions);
             $server = $helper->ask($input, $output, $question);
-            $output->writeln('You have just selected: <info>' . $server . '</info>');
         }
 
         if (!isset($servers[$server])) {
@@ -69,6 +68,69 @@ class Command extends \Symfony\Component\Console\Command\Command
         }
 
         return $server;
+    }
+
+    /**
+     * Let user select a value
+     *
+     * @param array $options Availeble options
+     * @param string $defaultOption
+     * @param string $question
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return string|false
+     */
+    protected function userSelect(
+        array $options,
+        $defaultOption,
+        $question,
+        InputInterface $input,
+        OutputInterface $output
+    ) {
+
+        if (empty($options)) {
+            return $defaultOption;
+        }
+
+        $helper = $this->getHelper('question');
+        $string = $question . ' <comment>(' . implode(', ', $options) . ')</comment> ';
+        $string .= '<info>[' . $defaultOption . ']</info>: ';
+        $question = new Question(
+            $string,
+            $defaultOption
+        );
+        $question->setAutocompleterValues($options);
+        $value = $helper->ask($input, $output, $question);
+
+        return $value;
+    }
+
+    /**
+     * Ask user for input
+     *
+     * @param string $question
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param string $default Default value
+     * @param bool $required
+     * @return string
+     */
+    protected function askUserForInput($question, InputInterface $input, OutputInterface $output, $default = null, $required = false) {
+        $helper = $this->getHelper('question');
+        if ($default !== null) {
+            $question .= ' <info>[' . $default . ']</info>';
+        }
+        $question = new Question($question .  ': ', $default);
+        if ($required) {
+            $question->setValidator(function ($value) {
+                if (trim($value) == '') {
+                    throw new \Exception('Value is required');
+                }
+
+                return $value;
+            });
+        }
+        return $helper->ask($input, $output, $question);
     }
 
     /**

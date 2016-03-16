@@ -35,7 +35,8 @@ class SshConnection
      */
     public function testSsh() {
        $return = $this->exec('-q -o BatchMode=yes -o ConnectTimeout=5 exit');
-        if ($return > 0) {
+        // todo: improve connection check so we drop ssh_pass check here
+        if ($return > 0 && !$this->getConfig('ssh_pass')) {
             return false;
         } else {
             return true;
@@ -59,9 +60,14 @@ class SshConnection
     public function getConfig($key) {
         $value = isset($this->serverConfiguration[$key]) ? $this->serverConfiguration[$key] : null;
         switch ($key) {
+            case 'project_root':
+                if ($value === null) {
+                    $value = $this->getConfig('web_root');
+                }
+                break;
             case 'backups_path':
                 if ($value === null) {
-                    $value = rtrim($this->getConfig('web_root') ?: '', '/');
+                    $value = rtrim($this->getConfig('project_root') ?: '', '/');
                     if ($value) {
                         $value .= '/';
                     }
@@ -80,7 +86,7 @@ class SshConnection
         // Rsync code
         $command = [];
         if ($this->getConfig('ssh_pass')) {
-            $command[] = 'sshpass -p' . $this->getConfig('ssh_pass');
+            $command[] = 'sshpass -p\'' . $this->getConfig('ssh_pass') . '\'';
         }
         $command[] = 'rsync -av';
         if ($this->getConfig('ssh_port')) {
@@ -131,7 +137,7 @@ class SshConnection
     {
         $realCommand = [];
         if ($this->getConfig('ssh_pass')) {
-            $realCommand[] = 'sshpass -p' . $this->getConfig('ssh_pass');
+            $realCommand[] = 'sshpass -p\'' . $this->getConfig('ssh_pass') . '\'';
         }
         $realCommand[] = 'ssh';
         if ($this->getConfig('ssh_port')) {
@@ -157,7 +163,7 @@ class SshConnection
     {
         $realCommand = [];
         if ($this->getConfig('ssh_pass')) {
-            $realCommand[] = 'sshpass -p' . $this->getConfig('ssh_pass');
+            $realCommand[] = 'sshpass -p\'' . $this->getConfig('ssh_pass') . '\'';
         }
         $realCommand[] = 'ssh';
         if ($this->getConfig('ssh_port')) {
