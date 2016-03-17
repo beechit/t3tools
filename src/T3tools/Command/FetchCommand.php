@@ -39,6 +39,12 @@ class FetchCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $backupPath = $this->getApplication()->getConfiguration('local_typo3')['backups_path'];
+        if (!file_exists($backupPath)) {
+            $output->writeln('<error>Backup folder not found. Please create folder "' . $backupPath . '"</error>');
+            return 1;
+        }
+
         // Server
         $servers = $this->getApplication()->getConfiguration('servers');
         $server = $this->selectServer($servers, $input, $output, 'last');
@@ -61,7 +67,7 @@ class FetchCommand extends Command
         $output->writeln('<info>rsync ' . $backupName . '</info>');
         $command = [];
         $fileNameRemoteBackup = rtrim($sshConnection->getConfig('backups_path'), '/') . '/' . $backupName . '-backup.tgz';
-        $fileNameLocalBackup = $this->getApplication()->getConfiguration('local_typo3')['backups_path'] . $backupName . '-backup.tgz';
+        $fileNameLocalBackup = $backupPath . $backupName . '-backup.tgz';
         $command[] = $sshConnection->getConfig('ssh_user') . '@' . $sshConnection->getConfig('ssh_host') . ':' . $fileNameRemoteBackup;
         $command[] = $fileNameLocalBackup;
 
@@ -99,16 +105,16 @@ class FetchCommand extends Command
 
         // Keep domain info of local environment
         $db->query('
-        UPDATE
-            sys_domain AS a
-        LEFT JOIN
-            sys_domain_local AS b
-        ON
-            a.uid = b.uid
-        SET
-            a.domainName = b.domainName,
-            a.redirectTo = b.redirectTo
-    ');
+            UPDATE
+                sys_domain AS a
+            JOIN
+                sys_domain_local AS b
+            ON
+                a.uid = b.uid
+            SET
+                a.domainName = b.domainName,
+                a.redirectTo = b.redirectTo
+        ');
 
         if ($db->error) {
             $output->writeln('<error>' . $db->error . '</error>');
@@ -121,7 +127,7 @@ class FetchCommand extends Command
         $db->query('
             UPDATE
                 be_users AS a
-            LEFT JOIN
+            JOIN
                 be_users_local AS b
             ON
                 a.uid = b.uid
@@ -129,7 +135,8 @@ class FetchCommand extends Command
                 a.username = b.username,
                 a.password = b.password,
                 a.admin = b.admin,
-                a.disable = b.disable
+                a.disable = b.disable,
+                a.deleted = b.deleted
         ');
         if ($db->error) {
             $output->writeln('<error>' . $db->error . '</error>');
