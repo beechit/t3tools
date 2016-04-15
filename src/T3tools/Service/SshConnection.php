@@ -34,7 +34,7 @@ class SshConnection
      * @return bool
      */
     public function testSsh() {
-       $return = $this->exec('-q -o BatchMode=yes -o ConnectTimeout=5 exit');
+       $return = $this->passthru('-q -o BatchMode=yes -o ConnectTimeout=5 exit');
         // todo: improve connection check so we drop ssh_pass check here
         if ($return > 0 && !$this->getConfig('ssh_pass')) {
             return false;
@@ -112,10 +112,10 @@ class SshConnection
         if ($this->getConfig('php_path')) {
             $realCommand[] = $this->getConfig('php_path');
         }
-        if($this->getConfig('web_root')) {
-            $realCommand[] = rtrim($this->getConfig('web_root'), '/') . '/typo3conf/ext/typo3_console/Scripts/typo3cms';
+        if($this->getConfig('project_root')) {
+            $realCommand[] = rtrim($this->getConfig('project_root'), '/') . '/typo3cms';
         } else {
-            $realCommand[] = 'public_html/typo3conf/ext/typo3_console/Scripts/typo3cms';
+            $realCommand[] = 'typo3cms';
         }
         $realCommand[] = $command;
 

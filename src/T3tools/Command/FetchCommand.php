@@ -91,7 +91,7 @@ class FetchCommand extends Command
         $output->writeln('<info>Restore backup local</info>');
         $command = [];
         $command[] = $this->getApplication()->getConfiguration('local_typo3.php_path') ?: 'php';
-        $command[] = $this->getApplication()->getConfiguration('local_typo3.web_root') . 'typo3conf/ext/typo3_console/Scripts/typo3cms backup:restore ' . $backupName;
+        $command[] = $this->getApplication()->getConfiguration('local_typo3.project_path') . 'typo3cms backup:restore ' . $backupName;
         passthru(implode(' ', $command), $return);
 
         if ($return !== 0) {
